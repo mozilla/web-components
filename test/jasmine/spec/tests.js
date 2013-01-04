@@ -100,7 +100,8 @@ describe("web-components ", function() {
 
 			var foo = document.createElement('x-foo');
 			testBox.appendChild(foo);
-
+			testBox.removeChild(foo);
+			
 			waitsFor(function(){
 				return removed;
 			}, "removed should fire", 1000);
@@ -108,7 +109,6 @@ describe("web-components ", function() {
 			runs(function(){
 				expect(removed).toEqual(true);
 				expect(document.getElementById('foo')).toBeNull();
-				
 			});
 		});
 
@@ -117,7 +117,7 @@ describe("web-components ", function() {
 			var changed = false;
 			document.register('x-foo', {
 				lifecycle:{
-					attributeChanged: function(attr, value){
+					attributeChanged: function(attr, value, last){
 						if (attr == 'bar' && value=='baz'){
 							changed = true;
 						}
@@ -143,13 +143,13 @@ describe("web-components ", function() {
 
 		});
 
-		it('should fire inserted lifecycle event when set via innerHTML', function(){
+		it('should fire created lifecycle event when set via innerHTML', function(){
 
-			var inserted = false;
+			var created = false;
 			document.register('x-foo', {
 				lifecycle:{
-					inserted: function(){
-						inserted = true;
+					created: function(){
+						created = true;
 					}
 				}
 			});
@@ -157,11 +157,11 @@ describe("web-components ", function() {
 			testBox.innerHTML = '<x-foo id="foo"></x-foo>';
 
 			waitsFor(function(){
-				return inserted;
-			}, "inserted should fire", 1000);
+				return created;
+			}, "created should fire", 1000);
 
 			runs(function(){
-				expect(inserted).toEqual(true);
+				expect(created).toEqual(true);
 				expect(document.getElementById('foo')).toBeDefined();
 				
 			});
