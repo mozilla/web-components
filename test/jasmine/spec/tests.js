@@ -136,10 +136,52 @@ describe("web-components ", function() {
 			runs(function(){
 				expect(changed).toEqual(true);
 			});
-			
+
 		});
 
-		it('', function(){
+		it('should fire elementreplace when ', function(){
+
+			var elementreplaced = false;
+			testbox.innerHTML = '<x-bar>herka durka</x-bar>';
+
+			testbox.querySelector('x-bar').addEventListener('elementreplace', function(e){
+				expect(e.upgrade).toBeDefined();
+				// e.upgrade  new element
+				// this old
+				elementreplaced = true;
+			});
+			
+			document.register('x-bar', {});
+
+			waitsFor(function(){
+				return elementreplaced;
+			}, "changed should fire", 1000);
+
+			runs(function(){
+				expect(elementreplaced).toEqual(true);
+			});
+
+		});
+
+		it('should fire elementupgrade on document', function(){
+
+			var upgraded = false;
+			testbox.innerHTML = '<x-bar2>herka durka</x-bar2>';
+
+			var upgradeEvent = function(e){
+				upgraded = true;
+			}
+			document.addEventListener('elementupgrade', upgradeEvent);
+			document.register('x-bar2', {});
+
+			waitsFor(function(){
+				return upgraded;
+			}, "changed should fire", 1000);
+
+			runs(function(){
+				expect(upgraded).toEqual(true);
+				document.removeEventListener('elementupgrade',upgradeEvent)
+			});
 
 		});
 
