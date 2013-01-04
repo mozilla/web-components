@@ -13,52 +13,18 @@
 				tag = tags[name] = {
 					'prototype': wrapAttributes(proto),
 					'fragment': options.fragment || document.createDocumentFragment(),
-					'lifecycle': merge({
-						created: function(){},
-						removed: function(){},
-						inserted: function(){},
-						attributeChanged: function(){}
-					}, options.lifecycle)
+					'lifecycle': {
+						created: options.lifecycle.created || function(){},
+						removed: options.lifecycle.removed || function(){},
+						inserted: options.lifecycle.inserted || function(){},
+						attributeChanged: options.lifecycle.attributeChanged ||  function(){}
+					}
 				};
 			if (domready) query(doc, name).forEach(function(element){
 				upgrade(element, true);
 			});
 			return tag['prototype'];
 		};
-	
-	function typeOf(obj) {
-      return ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
-    };
-	
-	function clone(obj) {
-      var F = function(){};
-      F.prototype = obj;
-      return new F();
-    };
-    
-	function mergeOne(source, key, current){
-		switch (typeOf(current)){
-			case 'object':
-				if (typeOf(source[key]) == 'object'){
-					merge(source[key], current);
-				}
-				else source[key] = clone(current);
-				break;
-			case 'array': source[key] = toArray(current);
-				break;
-			default: source[key] = current;
-		}
-		return source;
-	};
-	
-	function merge(source, k, v){
-		if (typeOf(k) == 'string') return mergeOne(source, k, v);
-		for (var i = 1, l = arguments.length; i < l; i++){
-			var object = arguments[i];
-			for (var key in object) mergeOne(source, key, object[key]);
-		}
-		return source;
-	};
 	
 	var unsliceable = ['number', 'boolean', 'string', 'function'];
 	function toArray(obj){
@@ -208,7 +174,8 @@
 		var options = options || {},
 		event = doc.createEvent('Event');
 		event.initEvent(type, 'bubbles' in options ? options.bubbles : true, 'cancelable' in options ? options.cancelable : true);
-		element.dispatchEvent(merge(event, data));
+		for (var z in data) event[z] = data[z];
+		element.dispatchEvent(event);
 	};
 	
  	if (!doc.register) {
