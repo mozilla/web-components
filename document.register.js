@@ -9,15 +9,16 @@
 		register = doc.register || function(name, options){
 			if (!tags[name]) tokens.push(name);
 			var options = options || {},
+				lifecycle = options.lifecycle || {},
 				proto = options['prototype'] || Object.create((win.HTMLSpanElement || win.HTMLElement).prototype),
 				tag = tags[name] = {
 					'prototype': wrapAttributes(proto),
 					'fragment': options.fragment || document.createDocumentFragment(),
 					'lifecycle': {
-						created: options.lifecycle.created || function(){},
-						removed: options.lifecycle.removed || function(){},
-						inserted: options.lifecycle.inserted || function(){},
-						attributeChanged: options.lifecycle.attributeChanged ||  function(){}
+						created: lifecycle.created || function(){},
+						removed: lifecycle.removed || function(){},
+						inserted: lifecycle.inserted || function(){},
+						attributeChanged: lifecycle.attributeChanged ||  function(){}
 					}
 				};
 			if (domready) query(doc, name).forEach(function(element){
