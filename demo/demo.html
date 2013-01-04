@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="utf-8" />
+		<title>document.register - Mozilla Web Components</title>
+	 	<script type="text/javascript" src="../document.register.js"></script>
+	</head>
+
+<body>
+
+	<x-foo>Foo <x-bar>Bar!</x-bar></x-foo>
+
+</body>
+
+<script type="text/javascript">
+
+	['x-foo', 'x-bar'].forEach(function(type){
+		document.register(type, {
+			'prototype': Object.create((window.HTMLSpanElement || window.HTMLElement).prototype, {
+				baz: {
+					get: function() { return 'get'; },
+					set: function() { console.log('set'); },
+					enumerable: true,
+					configurable: true
+				}
+			}),
+			'lifecycle': {
+				created: function(proto){
+					console.log(type + ' created', this);
+				},
+				inserted: function(){
+					console.log(type + ' inserted', this);
+				},
+				removed: function(){
+					console.log(type + ' removed', this);
+				},
+				attributeChanged: function(attr, value){
+					console.log(type + ' attributeChanged', this, attr, value);
+				}
+			}
+		});
+	});
+	
+	var foo = document.querySelector('x-foo');
+	foo.addEventListener('elementreplace', function(){
+		console.log('x-foo elementreplace', this);
+	});
+	
+	var bar = document.querySelector('x-bar');
+	bar.addEventListener('elementreplace', function(){
+		console.log('x-bar elementreplace', this);
+	});
+	
+	document.addEventListener('elementupgrade', function(e){
+		console.log(e.target.nodeName + ' elementupgrade', e.target);
+	});
+	
+	setTimeout(function(){
+		var foo_new = document.querySelector('x-foo');
+		document.body.removeChild(foo_new);
+		setTimeout(function(){
+			document.body.appendChild(foo_new);
+		}, 1000);
+	}, 1000);
+	
+/*  if (!window.HTMLTemplateElement) {
+    xtag.register('template', {
+      lifecycle: {
+	      upgrade: function(){
+	        var html = '',
+	            script = doc.createElement('script');
+	            script.type = 'text/template';
+	        xtag.toArray(this.childNodes).forEach(function(node){
+	          html += this.removeChild(node).outerHTML || '';
+	        }, this);
+	        this.appendChild(script);
+	        this.innerHTML = html;
+	      }
+      },
+      getters: {
+        content: function(){
+          return this.xtag.content;
+        },
+        innerHTML: function(html){
+          return this.firstChild.innerHTML;
+        }
+      },
+      setters: {
+        content: function(value){
+          return value;
+        },
+        innerHTML: function(html){
+          this.firstChild.innerHTML = html;
+          this.xtag.content = xtag.createFragment(html);
+        }
+      }
+    });
+  }
+*/
+</script>
+
+</html>
