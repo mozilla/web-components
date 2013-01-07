@@ -12,7 +12,7 @@
 				lifecycle = options.lifecycle || {},
 				proto = options['prototype'] || Object.create((win.HTMLSpanElement || win.HTMLElement).prototype),
 				tag = tags[name] = {
-					'prototype': wrapAttributes(proto),
+					'prototype': wrapProto(proto),
 					'fragment': options.fragment || document.createDocumentFragment(),
 					'lifecycle': {
 						created: lifecycle.created || function(){},
@@ -42,7 +42,7 @@
 		return element.nodeName ? tags[element.nodeName.toLowerCase()] : false;
 	};
 	
-	function wrapAttributes(proto){
+	function wrapProto(proto){
 		var original = proto.setAttribute;
 		proto.setAttribute = function(attr, value){
 			var last = this.getAttribute(attr);
@@ -63,6 +63,7 @@
         next ? parent.insertBefore(returned, next) : parent.appendChild(returned);
     };
 	
+	var _createElement = doc.createElement;
 	function upgrade(element, replace){
 		if (!element._elementupgraded && !element._suppressObservers) {
 			var tag = getTag(element);
@@ -71,7 +72,7 @@
 				if (replace) {
 					element._suppressObservers = true;
 					manipulate(element, function(){
-						upgraded = doc.createElement(element.nodeName);
+						upgraded = _createElement.call(doc, element.nodeName);
 						upgraded._suppressObservers = true;
 						while (element.firstChild) upgraded.appendChild(element.firstChild);
 						var index = element.attributes.length;
@@ -189,9 +190,8 @@
 				upgrade(element, true);
 			});
 			
-			var _createElement = doc.createElement;
 			doc.createElement = function createElement(tag){
-				var element = _createElement.call(this, tag);
+				var element = _createElement.call(doc, tag);
 				upgrade(element);
 				return element;
 			};
@@ -204,5 +204,14 @@
 		if (doc.readyState == 'complete') initialize();
 		else doc.addEventListener(doc.readyState == 'interactive' ? 'readystatechange' : 'DOMContentLoaded', initialize); 
 	}
-
+	
+	doc.register.__polyfill__ = {
+		query: query,
+		getTag: getTag,
+		toArray: toArray,
+		fireEvent: fireEvent,
+		addObserver: addObserver,
+		removeObserver: removeObserver
+	};
+	
 })();
