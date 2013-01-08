@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "repository": {
     "type": "git",
-    "url": "git://github.com/mozilla/document.register.git"
+    "url": "git://github.com/mozilla/web-components.git"
   },
   "component": {
     "scripts": {
