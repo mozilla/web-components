@@ -1,0 +1,16 @@
+{
+  "name": "document.register polyfill",
+  "description": "Document.register polyfill for Web-Components",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mozilla/web-components.git"
+  },
+  "component": {
+    "scripts": {
+      "page": "document.register.js"
+    }
+  },
+  "devDependencies": {
+  }
+}
