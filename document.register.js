@@ -105,12 +105,17 @@
 				if (!element._suppressObservers && doc.documentElement.contains(element)) {
 					tag.lifecycle.inserted.call(element);
 				}
-				if (element.childNodes.length) query(element, tokens).forEach(function(el){
-					getTag(el).lifecycle.inserted.call(el);
-				});
+				insertChildren(element);
 			}
 		}
+		else insertChildren(element);
 	};
+	
+		function insertChildren(element){
+			if (element.childNodes.length) query(element, tokens).forEach(function(el){
+				getTag(el).lifecycle.inserted.call(el);
+			});
+		};
 	
 	function removed(element){
 		if (element._elementupgraded) {
@@ -125,13 +130,13 @@
 	};
 	
 	function addObserver(element, type, fn){
-		if (!element._observer) {
-			element._observer = { inserted: [], removed: [] };
+		if (!element._records) {
+			element._records = { inserted: [], removed: [] };
 			if (mutation){
-				var observer = new mutation(function(mutations) {
+				element._observer = new mutation(function(mutations) {
 					parseMutations(element, mutations);
 				});
-				observer.observe(element, {
+				element._observer.observe(element, {
 					subtree: true,
 					childList: true,
 					attributes: !true,
@@ -141,17 +146,17 @@
 			else ['Inserted', 'Removed'].forEach(function(type){
 				element.addEventListener('DOMNode' + type, function(event){
 					event._mutation = true;
-					element._observer[type.toLowerCase()].forEach(function(fn){
+					element._records[type.toLowerCase()].forEach(function(fn){
 						fn(event.target, event);
 					});
 				}, false);
 			});
 		}
-		if (element._observer[type].indexOf(fn) == -1) element._observer[type].push(fn);
+		if (element._records[type].indexOf(fn) == -1) element._records[type].push(fn);
 	};
 	
 	function removeObserver(element, type, fn){
-		var obj = element._observer;
+		var obj = element._records;
 		if (obj) (fn) ? obj[type].splice(obj[type].indexOf(fn), 1) : obj[type] = [];
 	};
 		
@@ -160,7 +165,7 @@
 		mutations.forEach(function(record){
 			record._mutation = true;
 			for (var z in diff) {
-				var type = element._observer[(z == 'added') ? 'inserted' : 'removed'],
+				var type = element._records[(z == 'added') ? 'inserted' : 'removed'],
 					nodes = record[z + 'Nodes'], length = nodes.length;
 				for (i = 0; i < length && diff[z].indexOf(nodes[i]) == -1; i++){
 					diff[z].push(nodes[i]);
@@ -180,10 +185,11 @@
 		element.dispatchEvent(event);
 	};
 	
+	var globalObserver;
  	if (!doc.register) {
 		doc.register = register;
 		function initialize(){
-			addObserver(doc.documentElement, 'inserted', inserted);
+			globalObserver = addObserver(doc.documentElement, 'inserted', inserted);
 			addObserver(doc.documentElement, 'removed', removed);
 			
 			if (tokens.length) query(doc, tokens).forEach(function(element){
@@ -210,8 +216,13 @@
 		getTag: getTag,
 		toArray: toArray,
 		fireEvent: fireEvent,
+		manipulate: manipulate,
 		addObserver: addObserver,
-		removeObserver: removeObserver
+		removeObserver: removeObserver,
+		observerElement: doc.documentElement,
+		parseMutations: parseMutations,
+		_inserted: inserted,
+		_createElement: _createElement
 	};
 	
 })();

@@ -5,7 +5,10 @@
 		<meta charset="utf-8" />
 		<title>document.register - Mozilla Web Components</title>
 	 	<script type="text/javascript" src="../document.register.js"></script>
+		<script type="text/javascript" src="../HTMLTemplateElement.js"></script>
 	</head>
+	
+	<template><img src="$(foo)" /></template>
 	
 	<style>
 		body {
@@ -36,7 +39,7 @@
 	</style>
 
 <body>
-
+<img src="$(bar)" />
 	<x-foo></x-foo>
 
 </body>
