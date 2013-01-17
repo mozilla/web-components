@@ -4,11 +4,11 @@
 		if (element) {
 			element.__frag__ = document.createDocumentFragment(element.innerHTML);
 			element.__frag__.ownerDocument = document.implementation.createHTMLDocument('');
-			element.__frag__.ownerDocument.addEventListener('error', function(){ return true }, true);
+			element.__frag__.ownerDocument.addEventListener('error', function(){ return true; }, true);
 			var script = document.createElement('script');
 			script.type = 'html/template';
 		}
-	}
+	};
 	
 	document.register('template', {
 		lifecycle: {

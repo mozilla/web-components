@@ -8,11 +8,12 @@ if (!(document.register || {}).__polyfill__){
       tokens = [],
       domready = false,
       mutation = win.MutationObserver || win.WebKitMutationObserver ||  win.MozMutationObserver,
+      _createElement = doc.createElement,
       register = function(name, options){
         if (!tags[name]) tokens.push(name);
-        var options = options || {},
-          lifecycle = options.lifecycle || {},
-          proto = options['prototype'] || Object.create((win.HTMLSpanElement || win.HTMLElement).prototype),
+        options = options || {};
+        var lifecycle = options.lifecycle || {},
+          proto = options.prototype || Object.create((win.HTMLSpanElement || win.HTMLElement).prototype),
           tag = tags[name] = {
             'prototype': wrapProto(proto),
             'fragment': options.fragment || document.createDocumentFragment(),
@@ -26,23 +27,23 @@ if (!(document.register || {}).__polyfill__){
         if (domready) query(doc, name).forEach(function(element){
           upgrade(element, true);
         });
-        return tag['prototype'];
+        return tag.prototype;
       };
     
     var unsliceable = ['number', 'boolean', 'string', 'function'];
     function toArray(obj){
-        return unsliceable.indexOf(typeof obj) == -1 ? 
-        Array.prototype.slice.call(obj, 0) :
-        [obj];
-      };
+      return unsliceable.indexOf(typeof obj) == -1 ? 
+      Array.prototype.slice.call(obj, 0) :
+      [obj];
+    }
     
     function query(element, selector){
-        return element && selector && selector.length ? toArray(element.querySelectorAll(selector)) : [];
-      };
+      return element && selector && selector.length ? toArray(element.querySelectorAll(selector)) : [];
+    }
     
     function getTag(element){
       return element.nodeName ? tags[element.nodeName.toLowerCase()] : false;
-    };
+    }
     
     function wrapProto(proto){
       var original = proto.setAttribute;
@@ -55,17 +56,21 @@ if (!(document.register || {}).__polyfill__){
         }
       };
       return proto;
-    };
+    }
     
     function manipulate(element, fn){
-          var next = element.nextSibling,
-              parent = element.parentNode,
+      var next = element.nextSibling,
+        parent = element.parentNode,
         frag = doc.createDocumentFragment(),
         returned = fn.call(frag.appendChild(element), frag) || element;
-          next ? parent.insertBefore(returned, next) : parent.appendChild(returned);
-      };
+      if (next){
+        parent.insertBefore(returned, next);
+      }else{
+        parent.appendChild(returned);
+      }
+    }
     
-    var _createElement = doc.createElement;
+    
     function upgrade(element, replace){
       if (!element._elementupgraded && !element._suppressObservers) {
         var tag = getTag(element);
@@ -85,15 +90,15 @@ if (!(document.register || {}).__polyfill__){
               return upgraded;
             });
           }
-          upgraded.__proto__ = tag['prototype'];
+          upgraded.__proto__ = tag.prototype;
           upgraded._elementupgraded = true;
           if (!mutation) delete upgraded._suppressObservers;
-          tag.lifecycle.created.call(upgraded, tag['prototype']);
+          tag.lifecycle.created.call(upgraded, tag.prototype);
           if (replace) fireEvent(element, 'elementreplace', { upgrade: upgraded }, { bubbles: false });
           fireEvent(upgraded, 'elementupgrade');
         }
       }
-    };
+    }
     
     function inserted(element, event){
       var tag = getTag(element);
@@ -111,13 +116,13 @@ if (!(document.register || {}).__polyfill__){
         }
       }
       else insertChildren(element);
-    };
+    }
 
     function insertChildren(element){
       if (element.childNodes.length) query(element, tokens).forEach(function(el){
         getTag(el).lifecycle.inserted.call(el);
       });
-    };
+    }
     
     function removed(element){
       if (element._elementupgraded) {
@@ -129,7 +134,7 @@ if (!(document.register || {}).__polyfill__){
           });
         }
       }
-    };
+    }
     
     function addObserver(element, type, fn){
       if (!element._records) {
@@ -155,12 +160,17 @@ if (!(document.register || {}).__polyfill__){
         });
       }
       if (element._records[type].indexOf(fn) == -1) element._records[type].push(fn);
-    };
+    }
     
     function removeObserver(element, type, fn){
       var obj = element._records;
-      if (obj) (fn) ? obj[type].splice(obj[type].indexOf(fn), 1) : obj[type] = [];
-    };
+      if (obj && fn){
+        obj[type].splice(obj[type].indexOf(fn), 1);
+      }
+      else{
+        obj[type] = [];
+      }
+    }
       
     function parseMutations(element, mutations) {
       var diff = { added: [], removed: [] };
@@ -177,24 +187,22 @@ if (!(document.register || {}).__polyfill__){
           }
         }
       });
-    };
+    }
       
     function fireEvent(element, type, data, options){
-      var options = options || {},
-      event = doc.createEvent('Event');
+      options = options || {};
+      var event = doc.createEvent('Event');
       event.initEvent(type, 'bubbles' in options ? options.bubbles : true, 'cancelable' in options ? options.cancelable : true);
       for (var z in data) event[z] = data[z];
       element.dispatchEvent(event);
-    };
-    
-    
+    }
 
     var globalObserver;
     var polyfill = !doc.register;
 
     if (polyfill) {
       doc.register = register;
-      function initialize(){
+      var initialize = function (){
         globalObserver = addObserver(doc.documentElement, 'inserted', inserted);
         addObserver(doc.documentElement, 'removed', removed);
         
@@ -211,7 +219,7 @@ if (!(document.register || {}).__polyfill__){
         domready = true;
         fireEvent(doc, 'DOMComponentsLoaded');
         fireEvent(doc, '__DOMComponentsLoaded__');
-      }
+      };
       
       if (doc.readyState == 'complete') initialize();
       else doc.addEventListener(doc.readyState == 'interactive' ? 'readystatechange' : 'DOMContentLoaded', initialize); 
@@ -230,8 +238,7 @@ if (!(document.register || {}).__polyfill__){
       _createElement: _createElement,
       _polyfilled: polyfill
     };
-    
-    
+
   })();
 
 }

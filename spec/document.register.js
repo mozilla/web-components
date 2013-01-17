@@ -10,7 +10,7 @@ describe("web-components ", function() {
 		runs(function(){
 			var script = document.createElement('script');
 			script.type = 'text/javascript';
-			script.src = '../../document.register.js?d=' + new Date().getTime();
+			script.src = '../src/document.register.js?d=' + new Date().getTime();
 			document.getElementsByTagName('head')[0].appendChild(script);
 		});
 
@@ -170,7 +170,7 @@ describe("web-components ", function() {
 
 			var upgradeEvent = function(e){
 				upgraded = true;
-			}
+			};
 			document.addEventListener('elementupgrade', upgradeEvent);
 			document.register('x-bar2', {});
 
@@ -180,7 +180,7 @@ describe("web-components ", function() {
 
 			runs(function(){
 				expect(upgraded).toEqual(true);
-				document.removeEventListener('elementupgrade',upgradeEvent)
+				document.removeEventListener('elementupgrade',upgradeEvent);
 			});
 
 		});

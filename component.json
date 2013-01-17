@@ -1,13 +1,14 @@
 {
   "name": "document.register",
   "description": "Document.register polyfill for Web-Components",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "keywords": [
     "web-components",
     "document.register",
-    "element"
+    "element",
+    "x-tag"
   ],
   "scripts": [
-    "document.register.js"
+    "src/document.register.js"
   ]
 }
