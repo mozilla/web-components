@@ -50,7 +50,7 @@ if (!(document.register || {}).__polyfill__){
       proto.setAttribute = function(attr, value){
         var last = this.getAttribute(attr);
         original.call(this, attr, value);
-        if (this.nodeName && this.nodeName.match(/^X-/) && last != this.getAttribute(attr)) {
+        if (last != this.getAttribute(attr)) {
           var tag = getTag(this);
           if (tag) tag.lifecycle.attributeChanged.call(this, attr, value, last);
         }
@@ -120,6 +120,7 @@ if (!(document.register || {}).__polyfill__){
 
     function insertChildren(element){
       if (element.childNodes.length) query(element, tokens).forEach(function(el){
+        if (!el._elementupgraded) upgrade(el, true);
         getTag(el).lifecycle.inserted.call(el);
       });
     }
