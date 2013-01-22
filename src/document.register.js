@@ -12,10 +12,12 @@ if (!(document.register || {}).__polyfill__){
       register = function(name, options){
         if (!tags[name]) tokens.push(name);
         options = options || {};
+        if (options.prototype && !('nodeName' in options.prototype)) {
+          throw new TypeError("Unexpected prototype for " + name + " element - custom element prototypes must inherit from the Element interface");
+        }
         var lifecycle = options.lifecycle || {},
             tag = tags[name] = {
-              'extends': (options['extends'] || (win.HTMLSpanElement || win.HTMLElement)).prototype,
-              'prototype': options.prototype,
+              'prototype': options.prototype || Object.create((win.HTMLSpanElement || win.HTMLElement).prototype),
               'fragment': options.fragment || document.createDocumentFragment(),
               'lifecycle': {
                 created: lifecycle.created || function(){},
@@ -27,7 +29,7 @@ if (!(document.register || {}).__polyfill__){
         if (domready) query(doc, name).forEach(function(element){
           upgrade(element, true);
         });
-        return Object.create(tag['extends'], tag.prototype);
+        return tag.prototype;
       };
     
     function typeOf(obj) {
@@ -96,7 +98,7 @@ if (!(document.register || {}).__polyfill__){
               return upgraded;
             });
           }
-          upgraded.__proto__ = Object.create(tag['extends'], clone(tag.prototype));
+          upgraded.__proto__ = tag.prototype;
           upgraded._elementupgraded = true;
           if (!mutation) delete upgraded._suppressObservers;
           tag.lifecycle.created.call(upgraded, tag.prototype);
@@ -239,15 +241,6 @@ if (!(document.register || {}).__polyfill__){
       
       if (doc.readyState == 'complete') initialize();
       else doc.addEventListener(doc.readyState == 'interactive' ? 'readystatechange' : 'DOMContentLoaded', initialize); 
-    }
-    else {
-      var _register = doc.register;
-      doc.register = function(name, options){
-        if (!('nodeName' in options.prototype)) {
-          options.prototype = Object.create((options['extends'] || (win.HTMLSpanElement || win.HTMLElement)).prototype, options.prototype);
-        }
-        return _register.call(doc, name, options);
-      };
     }
     
     doc.register.__polyfill__ = {
