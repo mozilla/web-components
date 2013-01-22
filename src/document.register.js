@@ -13,17 +13,17 @@ if (!(document.register || {}).__polyfill__){
         if (!tags[name]) tokens.push(name);
         options = options || {};
         var lifecycle = options.lifecycle || {},
-          tag = tags[name] = {
-            'extends': (options['extends'] || (win.HTMLSpanElement || win.HTMLElement)).prototype,
-            'prototype': options.prototype,
-            'fragment': options.fragment || doc.createDocumentFragment(),
-            'lifecycle': {
-              created: lifecycle.created || function(){},
-              removed: lifecycle.removed || function(){},
-              inserted: lifecycle.inserted || function(){},
-              attributeChanged: lifecycle.attributeChanged ||  function(){}
-            }
-          };
+            tag = tags[name] = {
+              'extends': (options['extends'] || (win.HTMLSpanElement || win.HTMLElement)).prototype,
+              'prototype': options.prototype,
+              'fragment': options.fragment || document.createDocumentFragment(),
+              'lifecycle': {
+                created: lifecycle.created || function(){},
+                removed: lifecycle.removed || function(){},
+                inserted: lifecycle.inserted || function(){},
+                attributeChanged: lifecycle.attributeChanged || function(){}
+              }
+            };
         if (domready) query(doc, name).forEach(function(element){
           upgrade(element, true);
         });
@@ -38,18 +38,16 @@ if (!(document.register || {}).__polyfill__){
       var fn = clone[type || typeOf(item)];
       return fn ? fn(item) : item;
     }
-
-    clone.object = function(src){
-      var obj = {};
-      for (var key in src) obj[key] = clone(src[key]);
-      return obj;
-    };
-    
-    clone.array = function(src){
-      var i = src.length, array = new Array(i);
-      while (i--) array[i] = clone(src[i]);
-      return array;
-    };
+      clone.object = function(src){
+        var obj = {};
+        for (var key in src) obj[key] = clone(src[key]);
+        return obj;
+      };
+      clone.array = function(src){
+        var i = src.length, array = new Array(i);
+        while (i--) array[i] = clone(src[i]);
+        return array;
+      };
     
     var unsliceable = ['number', 'boolean', 'string', 'function'];
     function toArray(obj){
@@ -73,7 +71,8 @@ if (!(document.register || {}).__polyfill__){
         returned = fn.call(frag.appendChild(element), frag) || element;
       if (next){
         parent.insertBefore(returned, next);
-      }else{
+      }
+      else{
         parent.appendChild(returned);
       }
     }
@@ -205,9 +204,7 @@ if (!(document.register || {}).__polyfill__){
       element.dispatchEvent(event);
     }
 
-    var globalObserver;
     var polyfill = !doc.register;
-
     if (polyfill) {
       doc.register = register;
       
@@ -228,7 +225,7 @@ if (!(document.register || {}).__polyfill__){
       };
       
       var initialize = function (){
-        globalObserver = addObserver(doc.documentElement, 'inserted', inserted);
+        addObserver(doc.documentElement, 'inserted', inserted);
         addObserver(doc.documentElement, 'removed', removed);
         
         if (tokens.length) query(doc, tokens).forEach(function(element){
@@ -249,7 +246,7 @@ if (!(document.register || {}).__polyfill__){
         if (!('nodeName' in options.prototype)) {
           options.prototype = Object.create((options['extends'] || (win.HTMLSpanElement || win.HTMLElement)).prototype, options.prototype);
         }
-        return _register.call(doc, name, options); 
+        return _register.call(doc, name, options);
       };
     }
     
