@@ -13,10 +13,10 @@ if (!(document.register || {}).__polyfill__){
         if (!tags[name]) tokens.push(name);
         options = options || {};
         var lifecycle = options.lifecycle || {},
-          proto = options.prototype || Object.create((win.HTMLSpanElement || win.HTMLElement).prototype),
           tag = tags[name] = {
-            'prototype': wrapProto(proto),
-            'fragment': options.fragment || document.createDocumentFragment(),
+            'extends': (options['extends'] || (win.HTMLSpanElement || win.HTMLElement)).prototype,
+            'prototype': options.prototype,
+            'fragment': options.fragment || doc.createDocumentFragment(),
             'lifecycle': {
               created: lifecycle.created || function(){},
               removed: lifecycle.removed || function(){},
@@ -27,8 +27,29 @@ if (!(document.register || {}).__polyfill__){
         if (domready) query(doc, name).forEach(function(element){
           upgrade(element, true);
         });
-        return tag.prototype;
+        return Object.create(tag['extends'], tag.prototype);
       };
+    
+    function typeOf(obj) {
+      return ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
+    }
+    
+    function clone(item, type){
+      var fn = clone[type || typeOf(item)];
+      return fn ? fn(item) : item;
+    }
+
+    clone.object = function(src){
+      var obj = {};
+      for (var key in src) obj[key] = clone(src[key]);
+      return obj;
+    };
+    
+    clone.array = function(src){
+      var i = src.length, array = new Array(i);
+      while (i--) array[i] = clone(src[i]);
+      return array;
+    };
     
     var unsliceable = ['number', 'boolean', 'string', 'function'];
     function toArray(obj){
@@ -45,19 +66,6 @@ if (!(document.register || {}).__polyfill__){
       return element.nodeName ? tags[element.nodeName.toLowerCase()] : false;
     }
     
-    function wrapProto(proto){
-      var original = proto.setAttribute;
-      proto.setAttribute = function(attr, value){
-        var last = this.getAttribute(attr);
-        original.call(this, attr, value);
-        if (last != this.getAttribute(attr)) {
-          var tag = getTag(this);
-          if (tag) tag.lifecycle.attributeChanged.call(this, attr, value, last);
-        }
-      };
-      return proto;
-    }
-    
     function manipulate(element, fn){
       var next = element.nextSibling,
         parent = element.parentNode,
@@ -69,7 +77,6 @@ if (!(document.register || {}).__polyfill__){
         parent.appendChild(returned);
       }
     }
-    
     
     function upgrade(element, replace){
       if (!element._elementupgraded && !element._suppressObservers) {
@@ -90,7 +97,7 @@ if (!(document.register || {}).__polyfill__){
               return upgraded;
             });
           }
-          upgraded.__proto__ = tag.prototype;
+          upgraded.__proto__ = Object.create(tag['extends'], clone(tag.prototype));
           upgraded._elementupgraded = true;
           if (!mutation) delete upgraded._suppressObservers;
           tag.lifecycle.created.call(upgraded, tag.prototype);
@@ -203,6 +210,23 @@ if (!(document.register || {}).__polyfill__){
 
     if (polyfill) {
       doc.register = register;
+      
+      doc.createElement = function createElement(tag){
+        var element = _createElement.call(doc, tag);
+        upgrade(element);
+        return element;
+      };
+      
+      var _setAttribute = Element.prototype.setAttribute;   
+      Element.prototype.setAttribute = function(attr, value){
+        var tag = getTag(this),
+            last = this.getAttribute(attr);
+        _setAttribute.call(this, attr, value);
+        if (tag && last != this.getAttribute(attr)) {
+          tag.lifecycle.attributeChanged.call(this, attr, value, last);
+        } 
+      };
+      
       var initialize = function (){
         globalObserver = addObserver(doc.documentElement, 'inserted', inserted);
         addObserver(doc.documentElement, 'removed', removed);
@@ -210,12 +234,6 @@ if (!(document.register || {}).__polyfill__){
         if (tokens.length) query(doc, tokens).forEach(function(element){
           upgrade(element, true);
         });
-        
-        doc.createElement = function createElement(tag){
-          var element = _createElement.call(doc, tag);
-          upgrade(element);
-          return element;
-        };
         
         domready = true;
         fireEvent(doc, 'DOMComponentsLoaded');
@@ -225,9 +243,20 @@ if (!(document.register || {}).__polyfill__){
       if (doc.readyState == 'complete') initialize();
       else doc.addEventListener(doc.readyState == 'interactive' ? 'readystatechange' : 'DOMContentLoaded', initialize); 
     }
+    else {
+      var _register = doc.register;
+      doc.register = function(name, options){
+        if (!('nodeName' in options.prototype)) {
+          options.prototype = Object.create((options['extends'] || (win.HTMLSpanElement || win.HTMLElement)).prototype, options.prototype);
+        }
+        return _register.call(doc, name, options); 
+      };
+    }
     
     doc.register.__polyfill__ = {
       query: query,
+      clone: clone,
+      typeOf: typeOf,
       toArray: toArray,
       fireEvent: fireEvent,
       manipulate: manipulate,
