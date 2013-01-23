@@ -12,7 +12,7 @@ if (!(document.register || {}).__polyfill__){
       register = function(name, options){
         if (!tags[name]) tokens.push(name);
         options = options || {};
-        if (options.prototype && !('nodeName' in options.prototype)) {
+        if (options.prototype && !('setAttribute' in options.prototype)) {
           throw new TypeError("Unexpected prototype for " + name + " element - custom element prototypes must inherit from the Element interface");
         }
         var lifecycle = options.lifecycle || {},
