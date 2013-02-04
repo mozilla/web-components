@@ -1,28 +1,38 @@
 (function(){
-	
-	var createFragment = function(element){
-		if (element) {
-			element.__frag__ = document.createDocumentFragment(element.innerHTML);
-			element.__frag__.ownerDocument = document.implementation.createHTMLDocument('');
-			element.__frag__.ownerDocument.addEventListener('error', function(){ return true; }, true);
-			var script = document.createElement('script');
-			script.type = 'html/template';
-		}
-	};
-	
-	document.register('template', {
-		lifecycle: {
-			created: function(){
-				createFragment(this);
-			}
-		},
-		'prototype': Object.create(HTMLScriptElement.prototype, {
-			content: {
-				get: function(){
-					return this.__frag__;
-				}
-			}
-		})
-	});
+  
+  if (!window.HTMLTemplateElement) {
+    
+    document.templateContentsOwner = document.implementation.createHTMLDocument('');
+    
+    function createFragment(element){
+      var wrap = document.createElement('div'),
+          range = document.createRange();
+      document.body.appendChild(wrap).innerHTML = element.innerHTML;
+      range.setStartBefore(wrap.firstChild);
+      range.setEndAfter(wrap.childNodes[wrap.childNodes.length - 1]);
+      var frag = range.extractContents();
+      document.body.removeChild(wrap);
+      Object.defineProperty(frag, 'ownerDocument', { value: document.templateContentsOwner });
+      return frag;
+    };
+    
+    HTMLTemplateElement = document.register('template', {
+      lifecycle: {
+        created: function(){
+          
+        }
+      },
+      'prototype': Object.create(HTMLObjectElement.prototype, {
+        content: {
+          get: function(){
+            var frag = this.__frag__ || (this.__frag__ = createFragment(this));
+            if (!frag.childNodes.length) this.innerHTML = '';
+            return frag;
+          }
+        }
+      })
+    });
+    
+  }
 	
 })();

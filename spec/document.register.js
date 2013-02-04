@@ -45,7 +45,20 @@ describe("web-components ", function() {
 		
 	});
 
-	
+  it('should create an element with the same prototype of the newly created constructor', function(){
+		var created = false;
+		var XFoo = document.register('x-foo', {
+			lifecycle:{
+				created: function(proto){
+					created = true;
+				}
+			}
+		});
+
+		var foo = new XFoo();
+
+		expect(foo.__proto__).toEqual(XFoo.prototype);
+	});
 
 	describe('using testbox', function(){
 		var testBox;

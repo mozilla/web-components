@@ -17,8 +17,11 @@ if (!(document.register || {}).__polyfill__){
         }
         var lifecycle = options.lifecycle || {},
             tag = tags[name] = {
+              'constructor': function(){
+                return doc.createElement(name);
+              },
               'prototype': options.prototype || Object.create((win.HTMLSpanElement || win.HTMLElement).prototype),
-              'fragment': options.fragment || document.createDocumentFragment(),
+              'fragment': options.fragment || doc.createDocumentFragment(),
               'lifecycle': {
                 created: lifecycle.created || function(){},
                 removed: lifecycle.removed || function(){},
@@ -26,10 +29,11 @@ if (!(document.register || {}).__polyfill__){
                 attributeChanged: lifecycle.attributeChanged || function(){}
               }
             };
+        tag.constructor.prototype = tag.prototype;
         if (domready) query(doc, name).forEach(function(element){
           upgrade(element, true);
         });
-        return tag.prototype;
+        return tag.constructor;
       };
     
     function typeOf(obj) {
@@ -99,6 +103,7 @@ if (!(document.register || {}).__polyfill__){
             });
           }
           upgraded.__proto__ = tag.prototype;
+          upgraded.constructor = tag.constructor;
           upgraded._elementupgraded = true;
           if (!mutation) delete upgraded._suppressObservers;
           tag.lifecycle.created.call(upgraded, tag.prototype);
