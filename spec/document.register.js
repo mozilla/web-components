@@ -57,7 +57,7 @@ describe("web-components ", function() {
 
 		var foo = new XFoo();
 
-		expect(foo.__proto__).toEqual(XFoo.prototype);
+		expect(foo.constructor.prototype).toEqual(XFoo.prototype);
 	});
 
 	describe('using testbox', function(){
@@ -219,6 +219,31 @@ describe("web-components ", function() {
 				expect(created).toEqual(true);
 				expect(document.getElementById('foo')).toBeDefined();
 				
+			});
+		});
+    
+    it('should create a new element that has a toggle method', function(){
+
+			var created = false;
+			document.register('x-foo', {
+				prototype: Object.create(window.HTMLDivElement.prototype, {
+          toggle: {
+            value: function(){
+              return 'bar';
+            }
+          }
+        })
+			}, {
+          toggle: {
+            value: function(){
+              return 'bar';
+            }
+          }
+        });
+
+			runs(function(){
+        var foo = document.createElement('x-foo');
+				expect(foo.toggle()).toEqual('bar');
 			});
 		});
 	});
