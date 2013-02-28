@@ -206,7 +206,7 @@ if (!(document.register || {}).__polyfill__){
         for (var z in diff) {
           var type = element._records[(z == 'added') ? 'inserted' : 'removed'],
             nodes = record[z + 'Nodes'], length = nodes.length;
-          for (i = 0; i < length && diff[z].indexOf(nodes[i]) == -1; i++){
+          for (var i = 0; i < length && diff[z].indexOf(nodes[i]) == -1; i++){
             diff[z].push(nodes[i]);
             type.forEach(function(fn){
               fn(nodes[i], record);
