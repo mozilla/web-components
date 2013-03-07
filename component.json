@@ -8,7 +8,7 @@
     "element",
     "x-tag"
   ],
-  "scripts": [
+  "main": [
     "src/document.register.js"
   ]
 }
