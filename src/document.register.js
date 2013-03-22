@@ -110,7 +110,7 @@ if (!(document.register || {}).__polyfill__){
               var index = element.attributes.length;
               while (index--) {
                 var attr = element.attributes[index];
-                upgraded.setAttribute(attr.name, attr.value);
+                _setAttribute.call(upgraded, attr.name, attr.value);
               }
               return upgraded;
             });
