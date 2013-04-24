@@ -23,18 +23,19 @@ describe("web-components ", function() {
     });
   });
 
-  it('should fire created lifecycle event', function(){
+  it('should fire the ready lifecycle callback', function(){
     var created = false;
     document.register('x-foo', {
-      lifecycle:{
-        created: function(proto){
-          created = true;
+      prototype: Object.create(window.HTMLElement.prototype, {
+        readyCallback: {
+          value: function(proto){
+            created = true;
+          }
         }
-      }
+      })
     });
 
     var foo = document.createElement('x-foo');
-
     waitsFor(function(){
       return created;
     }, "created should fire for new tag", 1000);
@@ -48,11 +49,13 @@ describe("web-components ", function() {
   it('should create an element with the same prototype of the newly created constructor', function(){
     var created = false;
     var XFoo = document.register('x-foo', {
-      lifecycle:{
-        created: function(proto){
-          created = true;
+      prototype: Object.create(window.HTMLElement.prototype, {
+        readyCallback: {
+          value: function(proto){
+            created = true;
+          }
         }
-      }
+      })
     });
 
     var foo = new XFoo();
@@ -79,11 +82,13 @@ describe("web-components ", function() {
 
       var inserted = false;
       document.register('x-foo', {
-        lifecycle:{
-          inserted: function(){
-            inserted = true;
+        prototype: Object.create(window.HTMLElement.prototype, {
+          insertedCallback: {
+            value: function(){
+              inserted = true;
+            }
           }
-        }
+        })
       });
 
       var foo = document.createElement('x-foo');
@@ -104,11 +109,13 @@ describe("web-components ", function() {
 
       var removed = false;
       document.register('x-foo', {
-        lifecycle:{
-          removed: function(){
-            removed = true;
+        prototype: Object.create(window.HTMLElement.prototype, {
+          removedCallback: { 
+            value: function(){
+              removed = true;
+            }
           }
-        }
+        })
       });
 
       var foo = document.createElement('x-foo');
@@ -129,13 +136,15 @@ describe("web-components ", function() {
 
       var changed = false;
       document.register('x-foo', {
-        lifecycle:{
-          attributeChanged: function(attr, value, last){
-            if (attr == 'bar' && value=='baz'){
-              changed = true;
+        prototype: Object.create(window.HTMLElement.prototype, {
+          attributeChangedCallback: {
+            value: function(attr, value, last){
+              if (attr == 'bar' && value=='baz'){
+                changed = true;
+              }
             }
           }
-        }
+        })
       });
 
       var foo = document.createElement('x-foo');
@@ -152,7 +161,7 @@ describe("web-components ", function() {
 
     });
 
-    it('should fire elementreplace when ', function(){
+/*     it('should fire elementreplace when ', function(){
 
       var elementreplaced = false;
       testbox.innerHTML = '<x-bar>herka durka</x-bar>';
@@ -196,17 +205,19 @@ describe("web-components ", function() {
         document.removeEventListener('elementupgrade',upgradeEvent);
       });
 
-    });
+    }); */
 
     it('should fire created lifecycle event when set via innerHTML', function(){
 
       var created = false;
       document.register('x-foo', {
-        lifecycle:{
-          created: function(){
-            created = true;
+        prototype: Object.create(window.HTMLElement.prototype, {
+          readyCallback: {
+            value: function(){
+              created = true;
+            }
           }
-        }
+        })
       });
 
       testBox.innerHTML = '<x-foo id="foo"></x-foo>';
@@ -226,25 +237,40 @@ describe("web-components ", function() {
 
       var created = false;
       document.register('x-foo', {
-        prototype: Object.create(window.HTMLDivElement.prototype, {
+        prototype: Object.create(window.HTMLElement.prototype, {
           toggle: {
             value: function(){
               return 'bar';
             }
           }
         })
-      }, {
-          toggle: {
-            value: function(){
-              return 'bar';
-            }
-          }
-        });
+      });
 
       runs(function(){
         var foo = document.createElement('x-foo');
         expect(foo.toggle()).toEqual('bar');
       });
     });
+    
+    it('should create the correct base element when extending native elements', function(){
+
+      var created = false;
+      document.register('x-foo', {
+        extends: 'button',
+        prototype: Object.create(window.HTMLButtonElement.prototype, {
+          toggle: {
+            value: function(){
+              return 'bar';
+            }
+          }
+        })
+      });
+
+      runs(function(){
+        var foo = document.createElement('x-foo');
+        expect(foo.nodeName).toEqual('BUTTON');
+      });
+    });
+    
   });
 });

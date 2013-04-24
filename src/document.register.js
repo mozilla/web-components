@@ -11,31 +11,44 @@ if (!(document.register || {}).__polyfill__){
       mutation = win.MutationObserver || win.WebKitMutationObserver ||  win.MozMutationObserver,
       _createElement = doc.createElement,
       register = function(name, options){
-        if (!tags[name]) tokens.push(name);
-        options = options || {};
+        name = name.toLowerCase();
+        var base,
+            token = name,
+            options = options || {};
+            
+        if (!options.prototype) {
+          throw new Error('Missing required prototype property for registration of the ' + name + ' element');
+        }
+        
         if (options.prototype && !('setAttribute' in options.prototype)) {
           throw new TypeError("Unexpected prototype for " + name + " element - custom element prototypes must inherit from the Element interface");
         }
-        var _prototype = options.prototype || Object.create((win.HTMLSpanElement || win.HTMLElement).prototype),
-            lifecycle = options.lifecycle || {},
-            tag = tags[name] = {
+        
+        if (options.extends){
+          var ancestor = (tags[options.extends] || _createElement.call(doc, options.extends)).constructor;
+          if (ancestor != (win.HTMLUnknownElement || win.HTMLElement)) {
+            base = options.extends;
+            token = '[is="' + name + '"]';
+          }
+        }
+        
+        tokens.push(token);
+        
+        var tag = tags[name] = {
+              base: base,
               'constructor': function(){
                 return doc.createElement(name);
               },
-              _prototype: doc.__proto__ ? null : unwrapPrototype(_prototype),
-              'prototype': _prototype,
-              'fragment': options.fragment || doc.createDocumentFragment(),
-              'lifecycle': {
-                created: lifecycle.created || function(){},
-                removed: lifecycle.removed || function(){},
-                inserted: lifecycle.inserted || function(){},
-                attributeChanged: lifecycle.attributeChanged || function(){}
-              }
+              _prototype: doc.__proto__ ? null : unwrapPrototype(options.prototype),
+              'prototype': options.prototype
             };
+        
         tag.constructor.prototype = tag.prototype;
+        
         if (domready) query(doc, name).forEach(function(element){
           upgrade(element, true);
         });
+        
         return tag.constructor;
       };
     
@@ -80,7 +93,7 @@ if (!(document.register || {}).__polyfill__){
     }
     
     function getTag(element){
-      return element.nodeName ? tags[element.nodeName.toLowerCase()] : false;
+      return element.getAttribute ? tags[element.getAttribute('is') || element.nodeName.toLowerCase()] : false;
     }
     
     function manipulate(element, fn){
@@ -96,33 +109,15 @@ if (!(document.register || {}).__polyfill__){
       }
     }
     
-    function upgrade(element, replace){
-      if (!element._elementupgraded && !element._suppressObservers) {
+    function upgrade(element){
+      if (!element._elementupgraded) {
         var tag = getTag(element);
         if (tag) {
-          var upgraded = element;
-          if (replace) {
-            element._suppressObservers = true;
-            manipulate(element, function(){
-              upgraded = _createElement.call(doc, element.nodeName);
-              upgraded._suppressObservers = true;
-              while (element.firstChild) upgraded.appendChild(element.firstChild);
-              var index = element.attributes.length;
-              while (index--) {
-                var attr = element.attributes[index];
-                _setAttribute.call(upgraded, attr.name, attr.value);
-              }
-              return upgraded;
-            });
-          }
-          if (doc.__proto__) upgraded.__proto__ = tag.prototype;
-          else Object.defineProperties(upgraded, tag._prototype);
-          upgraded.constructor = tag.constructor;
-          upgraded._elementupgraded = true;
-          if (!mutation) delete upgraded._suppressObservers;
-          tag.lifecycle.created.call(upgraded, tag.prototype);
-          if (replace) fireEvent(element, 'elementreplace', { upgrade: upgraded }, { bubbles: false });
-          fireEvent(upgraded, 'elementupgrade');
+          if (doc.__proto__) element.__proto__ = tag.prototype;
+          else Object.defineProperties(element, tag._prototype);
+          element.constructor = tag.constructor;
+          element._elementupgraded = true;
+          if (element.readyCallback) element.readyCallback.call(element, tag.prototype);
         }
       }
     }
@@ -130,14 +125,10 @@ if (!(document.register || {}).__polyfill__){
     function inserted(element, event){
       var tag = getTag(element);
       if (tag){
-        if (!element._elementupgraded) upgrade(element, true);
+        if (!element._elementupgraded) upgrade(element);
         else {
-          if (element._suppressObservers) {
-            delete element._suppressObservers;
-            return element;
-          }
-          if (!element._suppressObservers && doc.documentElement.contains(element)) {
-            tag.lifecycle.inserted.call(element);
+          if (doc.documentElement.contains(element) && element.insertedCallback) {
+            element.insertedCallback.call(element);
           }
           insertChildren(element);
         }
@@ -147,20 +138,17 @@ if (!(document.register || {}).__polyfill__){
 
     function insertChildren(element){
       if (element.childNodes.length) query(element, tokens).forEach(function(el){
-        if (!el._elementupgraded) upgrade(el, true);
-        getTag(el).lifecycle.inserted.call(el);
+        if (!el._elementupgraded) upgrade(el);
+        if (el.insertedCallback) el.insertedCallback.call(el);
       });
     }
     
     function removed(element){
       if (element._elementupgraded) {
-        if (element._suppressObservers) delete element._suppressObservers;
-        else {
-          getTag(element).lifecycle.removed.call(element);
-          if (element.childNodes.length) query(element, tokens).forEach(function(el){
-            removed(el);
-          });
-        }
+        if (element.removedCallback) element.removedCallback.call(element);
+        if (element.childNodes.length) query(element, tokens).forEach(function(el){
+          removed(el);
+        });
       }
     }
     
@@ -230,7 +218,9 @@ if (!(document.register || {}).__polyfill__){
       doc.register = register;
       
       doc.createElement = function createElement(tag){
-        var element = _createElement.call(doc, tag);
+        var base = tags[tag] ? tags[tag].base : null;
+            element = _createElement.call(doc, base || tag);
+        if (base) element.setAttribute('is', tag);
         upgrade(element);
         return element;
       };
@@ -241,7 +231,7 @@ if (!(document.register || {}).__polyfill__){
             last = this.getAttribute(attr);
         _setAttribute.call(this, attr, value);
         if (tag && last != this.getAttribute(attr)) {
-          tag.lifecycle.attributeChanged.call(this, attr, value, last, skip);
+          if (this.attributeChangedCallback) this.attributeChangedCallback.call(this, attr, value, last, skip);
         } 
       };
       
@@ -250,10 +240,11 @@ if (!(document.register || {}).__polyfill__){
         addObserver(doc.documentElement, 'removed', removed);
         
         if (tokens.length) query(doc, tokens).forEach(function(element){
-          upgrade(element, true);
+          upgrade(element);
         });
         
         domready = true;
+        fireEvent(doc, 'WebComponentsReady');
         fireEvent(doc, 'DOMComponentsLoaded');
         fireEvent(doc, '__DOMComponentsLoaded__');
       };
