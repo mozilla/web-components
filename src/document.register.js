@@ -32,16 +32,16 @@ if (!(document.register || {}).__polyfill__){
           }
         }
         
-        tokens.push(token);
+        if (tokens.indexOf(token) == -1) tokens.push(token);
         
         var tag = tags[name] = {
-              base: base,
-              'constructor': function(){
-                return doc.createElement(name);
-              },
-              _prototype: doc.__proto__ ? null : unwrapPrototype(options.prototype),
-              'prototype': options.prototype
-            };
+          base: base,
+          'constructor': function(){
+            return doc.createElement(name);
+          },
+          _prototype: doc.__proto__ ? null : unwrapPrototype(options.prototype),
+          'prototype': options.prototype
+        };
         
         tag.constructor.prototype = tag.prototype;
         
@@ -62,8 +62,9 @@ if (!(document.register || {}).__polyfill__){
       return definition;
     }
     
+    var typeObj = {};
     function typeOf(obj) {
-      return ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
+      return typeObj.toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
     }
     
     function clone(item, type){
@@ -83,7 +84,7 @@ if (!(document.register || {}).__polyfill__){
     
     var unsliceable = ['number', 'boolean', 'string', 'function'];
     function toArray(obj){
-      return unsliceable.indexOf(typeof obj) == -1 ? 
+      return unsliceable.indexOf(typeOf(obj)) == -1 ? 
       Array.prototype.slice.call(obj, 0) :
       [obj];
     }
@@ -263,7 +264,8 @@ if (!(document.register || {}).__polyfill__){
       addObserver: addObserver,
       removeObserver: removeObserver,
       observerElement: doc.documentElement,
-      parseMutations: parseMutations,
+      _parseMutations: parseMutations,
+      _insertChildren: insertChildren,
       _inserted: inserted,
       _createElement: _createElement,
       _polyfilled: polyfill
