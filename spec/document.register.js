@@ -138,8 +138,8 @@ describe("web-components ", function() {
       document.register('x-foo', {
         prototype: Object.create(window.HTMLElement.prototype, {
           attributeChangedCallback: {
-            value: function(attr, value, last){
-              if (attr == 'bar' && value=='baz'){
+            value: function(attr, last){
+              if (attr == 'bar' && this.getAttribute(attr) =='baz'){
                 changed = true;
               }
             }
