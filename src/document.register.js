@@ -224,24 +224,23 @@
       return element;
     };
     
-    var _setAttribute = Element.prototype.setAttribute;   
-    Element.prototype.setAttribute = function(attr, value){
+    function changeAttribute(attr, value, method){
       var tag = getTag(this),
           last = this.getAttribute(attr);
-      _setAttribute.call(this, attr, value);
+      method.call(this, attr, value);
       if (tag && last != this.getAttribute(attr)) {
         if (this.attributeChangedCallback) this.attributeChangedCallback.call(this, attr, last);
       } 
     };
     
-    var _removeAttribute = Element.prototype.removeAttribute;   
-    Element.prototype.removeAttribute = function(attr){
-      var tag = getTag(this),
-          last = this.hasAttribute(attr);
-      _removeAttribute.call(this, attr);
-      if (tag && last !== false) {
-        if (this.attributeChangedCallback) this.attributeChangedCallback.call(this, attr, last);
-      } 
+    var setAttr = Element.prototype.setAttribute;   
+    Element.prototype.setAttribute = function(attr, value){
+      changeAttribute.call(this, attr, value, setAttr);
+    };
+    
+    removeAttr = Element.prototype.removeAttribute;   
+    Element.prototype.removeAttribute = function(attr, value){
+      changeAttribute.call(this, attr, value, removeAttr);
     };
     
     var initialize = function (){
@@ -253,9 +252,9 @@
       });
       
       domready = true;
-      fireEvent(doc, 'WebComponentsReady');
-      fireEvent(doc, 'DOMComponentsLoaded');
-      fireEvent(doc, '__DOMComponentsLoaded__');
+      fireEvent(doc.body, 'WebComponentsReady');
+      fireEvent(doc.body, 'DOMComponentsLoaded');
+      fireEvent(doc.body, '__DOMComponentsLoaded__');
     };
     
     if (doc.readyState == 'complete') initialize();
@@ -273,10 +272,10 @@
     removeObserver: removeObserver,
     observerElement: doc.documentElement,
     _parseMutations: parseMutations,
-    _insertChildren: insertChildren,
+    _insertChildren: window.CustomElements ? window.CustomElements.upgradeAll : insertChildren,
     _inserted: inserted,
     _createElement: _createElement,
-    _polyfilled: polyfill
+    _polyfilled: polyfill || (window.CustomElements && !window.CustomElements.hasNative)
   };
 
 })();
