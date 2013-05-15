@@ -117,6 +117,7 @@
         element.constructor = tag.constructor;
         element._elementupgraded = true;
         if (element.readyCallback) element.readyCallback.call(element, tag.prototype);
+        if (element.insertedCallback && doc.documentElement.contains(element)) element.insertedCallback.call(element, tag.prototype);
       }
     }
   }

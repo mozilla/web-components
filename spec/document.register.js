@@ -23,13 +23,19 @@ describe("web-components ", function() {
     });
   });
 
-  it('should fire the ready lifecycle callback', function(){
+  it('should fire the ready and inserted lifecycle callbacks', function(){
     var created = false;
+    var inserted = false;
     document.register('x-foo', {
       prototype: Object.create(window.HTMLElement.prototype, {
         readyCallback: {
           value: function(proto){
             created = true;
+          }
+        },
+        insertedCallback: {
+          value: function(){
+            if (this.id == 'element_in_source') inserted = true;
           }
         }
       })
@@ -37,11 +43,11 @@ describe("web-components ", function() {
 
     var foo = document.createElement('x-foo');
     waitsFor(function(){
-      return created;
+      return created && inserted;
     }, "created should fire for new tag", 1000);
 
     runs(function(){
-      expect(created).toEqual(true);
+      expect(created === true && inserted === true).toEqual(true);
     });
     
   });
