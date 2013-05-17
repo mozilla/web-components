@@ -17,11 +17,6 @@
     };
     
     HTMLTemplateElement = document.register('template', {
-      lifecycle: {
-        created: function(){
-          
-        }
-      },
       'prototype': Object.create(HTMLObjectElement.prototype, {
         content: {
           get: function(){
